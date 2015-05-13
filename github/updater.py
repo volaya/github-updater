@@ -14,52 +14,24 @@ import time
 
 class GitHubPlugin():
 
-    def __init__(self, user, reponame, name = None, folder = None):
+    def __init__(self, user, reponame, folder):
         self.user = user
         self.reponame = reponame
-        self._folder = folder
-        self._name = name
-        self._metadata = None
+        self.folder = folder
 
     def _get(self, url):
         response = urllib.urlopen(url)
         return response.read()
 
-    def localPath(self):
-        if self._folder is None:
-            folderName = os.path.basename(self.metadata("sourceFolder"))
-            self._folder = os.path.join(pluginsFolder(), folderName)
-        return self._folder
-
     def isInstalled(self):
-        return os.path.exists(self.localPath())
+        return os.path.exists(self.folder)
 
     def isVersioned(self):
         return os.path.exists(self.commitIdFile())
 
     def commitIdFile(self):
-        return os.path.join(self.localPath(), "lastgithubversion")
+        return os.path.join(self.folder, "lastgithubversion")
 
-    def isValid(self):
-        try:
-            assert self.metadata("Name").strip()
-            assert self.metadata("sourceFolder").strip()
-            return True
-        except:
-            return False
-
-    def metadata(self, name, ref = "master"):
-        if ref != "master" or self._metadata is None:
-            url = "https://raw.githubusercontent.com/%s/%s/%s/githubmetadata.txt" % (self.user, self.reponame, ref)
-            text = self._get(url)
-            config = ConfigParser.ConfigParser()
-            buf = StringIO.StringIO(text)
-            config.readfp(buf)
-            if ref == "master":
-                self._metadata = config
-        else:
-            config = self._metadata
-        return config.get("General", name).replace("\n", "")
 
     def install(self, ref, progress = None):
         filename = tempFilename("zip")
@@ -69,18 +41,19 @@ class GitHubPlugin():
         with open(filename, 'rb') as f:
             z = zipfile.ZipFile(f)
             z.extractall(tmpFolder)
-        path = os.path.join(tmpFolder, "%s-%s" % (self.reponame, ref), self.metadata("sourceFolder"))
-        if os.path.exists(self.localPath()):
-            shutil.rmtree(self.localPath(), True)
-        #mkdir(self.localPath())
-        shutil.copytree(path, self.localPath())
+        packageName = os.path.basename(self.folder)
+        path = os.path.join(tmpFolder, "%s-%s" % (self.reponame, ref), packageName)
+        print path
+        print filename
+        print self.folder
+        if os.path.exists(self.folder):
+            shutil.rmtree(self.folder, True)
+        #mkdir(self.folder)
+        shutil.copytree(path, self.folder)
         with open(self.commitIdFile(), "w") as f:
             f.write("\n".join([ref, self.dateFromRef(ref)]))
-        deps = self.metadata("dependencies")
-        for dep in deps:
-            pass
         updateAvailablePlugins()
-        packageName = os.path.basename(self.localPath())
+        
         loadPlugin(packageName)
 
     def dateFromRef(self, ref):
@@ -126,9 +99,9 @@ class GitHubPlugin():
 
 class PluginUpdaterDialog(QtGui.QDialog):
 
-    def __init__(self, username, reponame):
+    def __init__(self, username, reponame, folder):
         QtGui.QDialog.__init__(self, iface.mainWindow(), QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowTitleHint)
-        self.plugin = GitHubPlugin(username, reponame)
+        self.plugin = GitHubPlugin(username, reponame, folder)
         self.setupUi()
         self.fillPluginDescription()
 
@@ -164,6 +137,8 @@ class PluginUpdaterDialog(QtGui.QDialog):
                           "The plugin was succesfully updated",
                           QtGui.QMessageBox.Ok)             
             except Exception, e:
+                import traceback
+                traceback.print_exc()
                 QtGui.QApplication.restoreOverrideCursor()
                 QtGui.QMessageBox.critical(self, "Error updating plugin",
                           "The plugin could not be updated",
@@ -210,7 +185,9 @@ class PluginUpdaterDialog(QtGui.QDialog):
             else:
                 body += "<dl><dd> No stable versions available</dd></dl>"            
         except:
-            body ="<h2>Could not determining plugin status</h2>"            
+            body ="<h2>Could not determining plugin status</h2>" 
+            import traceback
+            traceback.print_exc()           
         finally:
             html = '''<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
                 <html>
