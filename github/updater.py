@@ -137,8 +137,6 @@ class PluginUpdaterDialog(QtGui.QDialog):
                           "The plugin was succesfully updated",
                           QtGui.QMessageBox.Ok)             
             except Exception, e:
-                import traceback
-                traceback.print_exc()
                 QtGui.QApplication.restoreOverrideCursor()
                 QtGui.QMessageBox.critical(self, "Error updating plugin",
                           "The plugin could not be updated",
@@ -185,9 +183,7 @@ class PluginUpdaterDialog(QtGui.QDialog):
             else:
                 body += "<dl><dd> No stable versions available</dd></dl>"            
         except:
-            body ="<h2>Could not determining plugin status</h2>" 
-            import traceback
-            traceback.print_exc()           
+            body ="<h2>Could not determining plugin status</h2>"        
         finally:
             html = '''<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
                 <html>
