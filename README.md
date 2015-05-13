@@ -36,5 +36,11 @@ Replace *[My plugin menu]* with the name of the menu where you plugin menu item 
 
 Now there will be an additional menu in your plugin menu, which will allow the user to update the plugin from the GitHub repository.
 
+![](menu.png)
+
+The dialog will show the latest available version, along with existing tags.
+
+![](dialog.png)
+
 
 - To create a release version, just create a tag in your GitHub repository
